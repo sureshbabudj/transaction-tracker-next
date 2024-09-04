@@ -1,7 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
 import Papa from "papaparse";
-import prisma from "../lib/prisma";
 import { createTransactions, getTransactions } from "./actions";
+import { txPatterns } from "./transactionPatterns";
 
 export interface CommonTransactionPayload {
   date: string;
@@ -62,28 +61,65 @@ interface WiseTransaction {
   Batch: any;
 }
 
+const escapeRegex = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+function findCategory(desc: string): string {
+  let category = "";
+  const description = desc.toLowerCase().replace(/[^a-z0-9\s]/g, "");
+
+  // Find the category based on the description patterns
+  for (const [cat, patternsArray] of Object.entries(txPatterns)) {
+    if (
+      patternsArray.some((pattern) => {
+        const escapedPattern = escapeRegex(pattern).replace(/%/g, "\\s*");
+        const regex = new RegExp(escapedPattern, "i");
+        return regex.test(description);
+      })
+    ) {
+      category = cat;
+      break;
+    }
+  }
+
+  return category;
+}
+
 const normalizeCommBankTransaction = (
   transaction: CommBankTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => ({
-  date: transaction["Booking date"],
-  description: transaction["Booking text"],
-  amount: parseFloat(transaction.Amount),
-  category: "",
-  accountHolderName,
-  bankName
-});
+): CommonTransactionPayload => {
+  if (!transaction["Booking date"]) {
+    transaction["Booking date"] = "No Date";
+  }
+  if (!transaction["Booking text"]) {
+    transaction["Booking text"] = "No Description";
+  }
+  if (!transaction["Amount"]) {
+    transaction["Amount"] = "0";
+  }
 
+  findCategory(transaction["Booking text"]);
+
+  return {
+    date: transaction["Booking date"],
+    description: transaction["Booking text"],
+    amount: parseFloat(transaction.Amount),
+    category: findCategory(transaction["Booking text"]),
+    accountHolderName,
+    bankName,
+  };
+};
 
 const normalizeRevoltTransaction = (
   transaction: RevoltTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => { 
-  
+): CommonTransactionPayload => {
   if (!transaction["Completed Date"]) {
-    transaction["Completed Date"] = "No Completed Date";
+    transaction["Completed Date"] = "No Date";
   }
   if (!transaction["Description"]) {
     transaction["Description"] = "No Description";
@@ -96,31 +132,41 @@ const normalizeRevoltTransaction = (
     date: transaction["Completed Date"],
     description: transaction.Description,
     amount: transaction.Amount,
-    category: "",
+    category: findCategory(transaction.Description),
     accountHolderName,
-    bankName
-  }
+    bankName,
+  };
 };
 
 const normalizeWiseTransaction = (
   transaction: WiseTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => ({
-  date: transaction["Finished on"],
-  description: transaction.Reference.toString(),
-  amount: transaction["Source amount (after fees)"],
-  category: "",
-  accountHolderName,
-  bankName
-});
+): CommonTransactionPayload => {
+  if (!transaction["Finished on"]) {
+    transaction["Finished on"] = "No Date";
+  }
+  if (!transaction["Reference"]) {
+    transaction["Reference"] = 1;
+  }
+  if (!transaction["Source amount (after fees)"]) {
+    transaction["Source amount (after fees)"] = 0;
+  }
+  return {
+    date: transaction["Finished on"],
+    description: transaction.Reference.toString(),
+    amount: transaction["Source amount (after fees)"],
+    category: findCategory(transaction.Reference.toString()),
+    accountHolderName,
+    bankName,
+  };
+};
 
 export const parseCSV = async (
   csvData: string,
   bankType: string,
-  accountHolderName: string,
+  accountHolderName: string
 ): Promise<CommonTransaction[]> => {
-
   if (!accountHolderName) {
     alert("Account holder name is required");
     return [];
@@ -140,7 +186,6 @@ export const parseCSV = async (
       );
       break;
     case "revolt":
-      debugger;
       transactions = (parsedData.data as RevoltTransaction[]).map((i) =>
         normalizeRevoltTransaction(i, accountHolderName, bankType)
       );

@@ -73,3 +73,21 @@ export async function correctTransactions() {
     },
   });
 }
+
+// dev only method
+export async function getTransactionPatterns() {
+  const transactions = await prisma.transaction.findMany();
+
+  const result: { [key: string]: string[] } = {};
+
+  transactions.forEach(transaction => {
+      const descriptionPattern = transaction.description.split(" ").slice(0, 5).join("%") + "%";
+      if (!result[transaction.category]) {
+          result[transaction.category] = [descriptionPattern];
+      } else if (!result[transaction.category].includes(descriptionPattern)) {
+          result[transaction.category].push(descriptionPattern);
+      }
+  });
+
+  return result;
+}
