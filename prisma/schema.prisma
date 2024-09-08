@@ -14,11 +14,20 @@ datasource db {
 }
 
 model Transaction {
-  id                Int    @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   date              String
   description       String
   amount            Float
-  category          String
-  accountHolderName String @default("Suresh Babu Dhanaraj")
+  categoryId        Int?
+  category          Category? @relation(fields: [categoryId], references: [id])
+  accountHolderName String    @default("Suresh Babu Dhanaraj")
   bankName          String
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String
+  value        String        @unique
+  patterns     String
+  transactions Transaction[]
 }

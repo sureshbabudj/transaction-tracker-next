@@ -1,4 +1,4 @@
-export const txPatterns = {
+export const txPatterns: { [key: string]: string[] } = {
   ARD: ["ARD%ZDF%DRadio%Beitragsservice%Rundfunk%"],
   DEPOSIT: [
     "BHARATESH%REGOUDAR%SECURITY%DEPOSIT%PAYBACK%",

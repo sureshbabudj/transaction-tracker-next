@@ -1,6 +1,6 @@
 "use server";
-
 import prisma from "../lib/prisma";
+import { links } from "./data";
 import { CommonTransaction, CommonTransactionPayload } from "./parseCSV";
 
 export async function createTransactions(
@@ -80,14 +80,51 @@ export async function getTransactionPatterns() {
 
   const result: { [key: string]: string[] } = {};
 
-  transactions.forEach(transaction => {
-      const descriptionPattern = transaction.description.split(" ").slice(0, 5).join("%") + "%";
-      if (!result[transaction.category]) {
-          result[transaction.category] = [descriptionPattern];
-      } else if (!result[transaction.category].includes(descriptionPattern)) {
-          result[transaction.category].push(descriptionPattern);
-      }
+  transactions.forEach((transaction) => {
+    const descriptionPattern =
+      transaction.description.split(" ").slice(0, 5).join("%") + "%";
+    if (!result[transaction.category]) {
+      result[transaction.category] = [descriptionPattern];
+    } else if (!result[transaction.category].includes(descriptionPattern)) {
+      result[transaction.category].push(descriptionPattern);
+    }
   });
 
   return result;
 }
+
+export const fetchInitialState = async (
+  path: string
+): Promise<Record<string, any>> => {
+  const breadcrumbs = [{ label: "Home", path: "/" }];
+  if (path === "/dashboard") {
+    breadcrumbs.push({ label: "Dashboard", path: "/dashboard" });
+  } else if (path === "/dashboard/transactions") {
+    breadcrumbs.push({ label: "Dashboard", path: "/dashboard" });
+    breadcrumbs.push({
+      label: "Transactions",
+      path: "/dashboard/transactions",
+    });
+  } else if (path === "/dashboard/upload") {
+    breadcrumbs.push({ label: "Dashboard", path: "/dashboard" });
+    breadcrumbs.push({
+      label: "Upload Transactions",
+      path: "/dashboard/upload",
+    });
+  } else if (path === "/dashboard/analytics") {
+    breadcrumbs.push({ label: "Dashboard", path: "/dashboard" });
+    breadcrumbs.push({
+      label: "Analytics",
+      path: "/dashboard/analytics",
+    });
+  }
+  // Fetch or compute your initial state here
+  return {
+    header: {},
+    footer: {},
+    account: {},
+    activeLinks: links.map((link) => ({ ...link, active: link.href === path })),
+    breadcrumbs,
+    helpLinks: [],
+  };
+};
