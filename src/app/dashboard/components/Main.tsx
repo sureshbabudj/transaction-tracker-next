@@ -2,7 +2,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AsideNav } from "./AsideNav";
 import { Header } from "./Header";
 import { BreadcrumbType } from "./BreadCrumbs";
-import { AsideLink } from "@/app/utils/data";
+import { AsideLink } from "@/data/data";
 
 export function Main({
   children,

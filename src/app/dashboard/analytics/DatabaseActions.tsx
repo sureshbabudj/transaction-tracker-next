@@ -1,10 +1,9 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import {
+  CategorizeTransaction,
   migrateCategories,
-  populateCategoryValues,
-  updateCategoryIds,
-} from "../../../../prisma/migration-utils";
+} from "@/lib/migration-utils";
 
 export function DatabaseActions() {
   return (
@@ -12,11 +11,8 @@ export function DatabaseActions() {
       <Button variant="outline" onClick={() => migrateCategories()}>
         Migrate Categories
       </Button>
-      <Button variant="outline" onClick={() => updateCategoryIds()}>
-        update Category Ids
-      </Button>
-      <Button variant="outline" onClick={() => populateCategoryValues()}>
-        populateCategoryValues
+      <Button variant="outline" onClick={() => CategorizeTransaction()}>
+        Categorize Transaction
       </Button>
     </div>
   );

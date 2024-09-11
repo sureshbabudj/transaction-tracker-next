@@ -26,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useState } from "react";
-import { CommonTransaction } from "@/app/utils/parseCSV";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,13 +36,39 @@ import {
   SelectContent,
   SelectItem,
 } from "@radix-ui/react-select";
+import { banks } from "@/data/data";
+import {
+  getCategories,
+  TransactionWithCategory,
+  updateTransaction,
+} from "@/lib/actions";
+import { Category } from "@prisma/client";
 
 interface TransactionPageProps {
-  transactions: CommonTransaction[];
+  transactions: TransactionWithCategory[];
+  categories: Category[];
 }
 
-function TransactionPage({ transactions }: TransactionPageProps) {
+function TransactionPage({ transactions, categories }: TransactionPageProps) {
   const [editRow, setEditRow] = useState<number | null>(null);
+  const handleCategoryChange = async (
+    e: string,
+    transaction: TransactionWithCategory
+  ) => {
+    const category = categories.find((c) => c.value === e);
+    if (!category) return;
+    try {
+      await updateTransaction({
+        id: transaction.id,
+        categoryId: category.id,
+      });
+      transaction.category = category;
+    } catch (error) {
+      console.log(error);
+    }
+    console.log("category updated");
+    setEditRow(null);
+  };
   return (
     <>
       <Card x-chunk="dashboard-06-chunk-0">
@@ -76,56 +101,40 @@ function TransactionPage({ transactions }: TransactionPageProps) {
                     {index + 1}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {`${new Date(transaction.date).getDate()}.${
-                      new Date(transaction.date).getMonth() + 1
-                    }.${new Date(transaction.date).getFullYear()}`}
+                    {transaction.date}
                   </TableCell>
                   <TableCell className="font-medium">
                     {transaction.description}
                   </TableCell>
                   <TableCell className="font-medium text-center">
                     {editRow !== index ? (
-                      <Badge variant="secondary">{transaction.category}</Badge>
+                      <Badge variant="secondary">
+                        {transaction.category?.name}
+                      </Badge>
                     ) : (
-                      <>
-                        <Input
-                          defaultValue={transaction.category}
-                          onChange={(e) =>
-                            (transaction.category = e.target.value)
-                          }
-                        />
-                        <Select
-                          onValueChange={(e) => (transaction.category = e)}
+                      <Select
+                        onValueChange={async (e) =>
+                          await handleCategoryChange(e, transaction)
+                        }
+                      >
+                        <SelectTrigger
+                          key={transaction.id}
+                          id={`category-${transaction.id}`}
+                          className="items-start [&_[data-description]]:hidden"
                         >
-                          <SelectTrigger
-                            id="category"
-                            className="items-start [&_[data-description]]:hidden"
-                          >
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {banks.map((bank) => (
-                              <SelectItem value={bank.value} key={bank.value}>
-                                <div className="flex items-start gap-3 text-muted-foreground">
-                                  <bank.icon className="size-5" />
-                                  <div className="grid gap-0.5">
-                                    <p>
-                                      {bank.label}
-                                      <span className="font-medium text-foreground">
-                                        {" "}
-                                        Bank
-                                      </span>
-                                    </p>
-                                    <p className="text-xs" data-description>
-                                      {bank.desc}
-                                    </p>
-                                  </div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          {categories.map((category) => (
+                            <SelectItem
+                              value={category.value}
+                              key={category.value}
+                            >
+                              <div className="py-2">{category.name}</div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </TableCell>
                   <TableCell className="font-medium">
@@ -169,7 +178,7 @@ function TransactionPage({ transactions }: TransactionPageProps) {
                         className="text-xs"
                         onClick={() => setEditRow(null)}
                       >
-                        Save
+                        cancel
                       </Button>
                     )}
                   </TableCell>

@@ -1,18 +1,19 @@
 import Papa from "papaparse";
-import { createTransactions, getTransactions } from "./actions";
-import { txPatterns } from "./transactionPatterns";
+import {
+  createTransactions,
+  getCategories as getDataBaseCategories,
+  getTransactions,
+  TransactionWithCategory,
+} from "./actions";
+import { Category } from "@prisma/client";
 
 export interface CommonTransactionPayload {
   date: string;
   description: string;
   amount: number;
-  category: string;
+  categoryId?: number;
   accountHolderName: string;
   bankName: string;
-}
-
-export interface CommonTransaction extends CommonTransactionPayload {
-  id: number;
 }
 
 interface CommBankTransaction {
@@ -61,24 +62,39 @@ interface WiseTransaction {
   Batch: any;
 }
 
-const escapeRegex = (string: string) => {
+const getCategories: {
+  default: () => Promise<Category[]>;
+  data?: Category[] | null;
+} = {
+  default: async (): Promise<Category[]> => {
+    if (getCategories.data) return getCategories.data;
+    const categories = await getDataBaseCategories();
+    getCategories.data = categories;
+    return categories;
+  },
+  data: null,
+};
+
+export const escapeRegex = (string: string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
-function findCategory(desc: string): string {
-  let category = "";
+async function findCategory(desc: string): Promise<number | null> {
+  let category: number | null = null;
   const description = desc.toLowerCase().replace(/[^a-z0-9\s]/g, "");
 
+  const categories = await getCategories.default();
+
   // Find the category based on the description patterns
-  for (const [cat, patternsArray] of Object.entries(txPatterns)) {
+  for (const cat of categories) {
     if (
-      patternsArray.some((pattern) => {
+      cat.patterns.split("|").some((pattern) => {
         const escapedPattern = escapeRegex(pattern).replace(/%/g, "\\s*");
         const regex = new RegExp(escapedPattern, "i");
         return regex.test(description);
       })
     ) {
-      category = cat;
+      category = cat.id;
       break;
     }
   }
@@ -86,11 +102,11 @@ function findCategory(desc: string): string {
   return category;
 }
 
-const normalizeCommBankTransaction = (
+const normalizeCommBankTransaction = async (
   transaction: CommBankTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => {
+): Promise<CommonTransactionPayload> => {
   if (!transaction["Booking date"]) {
     transaction["Booking date"] = "No Date";
   }
@@ -101,23 +117,25 @@ const normalizeCommBankTransaction = (
     transaction["Amount"] = "0";
   }
 
-  findCategory(transaction["Booking text"]);
-
-  return {
+  const payload: CommonTransactionPayload = {
     date: transaction["Booking date"],
     description: transaction["Booking text"],
     amount: parseFloat(transaction.Amount),
-    category: findCategory(transaction["Booking text"]),
     accountHolderName,
     bankName,
   };
+
+  const categoryId = await findCategory(transaction["Booking text"]);
+  if (categoryId) payload.categoryId = categoryId;
+
+  return payload;
 };
 
-const normalizeRevoltTransaction = (
+const normalizeRevoltTransaction = async (
   transaction: RevoltTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => {
+): Promise<CommonTransactionPayload> => {
   if (!transaction["Completed Date"]) {
     transaction["Completed Date"] = "No Date";
   }
@@ -128,21 +146,25 @@ const normalizeRevoltTransaction = (
     transaction["Amount"] = 0;
   }
 
-  return {
+  const payload: CommonTransactionPayload = {
     date: transaction["Completed Date"],
     description: transaction.Description,
     amount: transaction.Amount,
-    category: findCategory(transaction.Description),
     accountHolderName,
     bankName,
   };
+
+  const categoryId = await findCategory(transaction.Description);
+  if (categoryId) payload.categoryId = categoryId;
+
+  return payload;
 };
 
-const normalizeWiseTransaction = (
+const normalizeWiseTransaction = async (
   transaction: WiseTransaction,
   accountHolderName: string,
   bankName: string
-): CommonTransactionPayload => {
+): Promise<CommonTransactionPayload> => {
   if (!transaction["Finished on"]) {
     transaction["Finished on"] = "No Date";
   }
@@ -152,21 +174,26 @@ const normalizeWiseTransaction = (
   if (!transaction["Source amount (after fees)"]) {
     transaction["Source amount (after fees)"] = 0;
   }
-  return {
+  const payload: CommonTransactionPayload = {
     date: transaction["Finished on"],
     description: transaction.Reference.toString(),
     amount: transaction["Source amount (after fees)"],
-    category: findCategory(transaction.Reference.toString()),
+
     accountHolderName,
     bankName,
   };
+
+  const categoryId = await findCategory(transaction.Reference.toString());
+  if (categoryId) payload.categoryId = categoryId;
+
+  return payload;
 };
 
 export const parseCSV = async (
   csvData: string,
   bankType: string,
   accountHolderName: string
-): Promise<CommonTransaction[]> => {
+): Promise<TransactionWithCategory[]> => {
   if (!accountHolderName) {
     alert("Account holder name is required");
     return [];
@@ -181,18 +208,24 @@ export const parseCSV = async (
 
   switch (bankType) {
     case "commerzbank":
-      transactions = (parsedData.data as CommBankTransaction[]).map((i) =>
-        normalizeCommBankTransaction(i, accountHolderName, bankType)
+      transactions = await Promise.all(
+        (parsedData.data as CommBankTransaction[]).map((i) =>
+          normalizeCommBankTransaction(i, accountHolderName, bankType)
+        )
       );
       break;
     case "revolt":
-      transactions = (parsedData.data as RevoltTransaction[]).map((i) =>
-        normalizeRevoltTransaction(i, accountHolderName, bankType)
+      transactions = await Promise.all(
+        (parsedData.data as RevoltTransaction[]).map((i) =>
+          normalizeRevoltTransaction(i, accountHolderName, bankType)
+        )
       );
       break;
     case "wise":
-      transactions = (parsedData.data as WiseTransaction[]).map((i) =>
-        normalizeWiseTransaction(i, accountHolderName, bankType)
+      transactions = await Promise.all(
+        (parsedData.data as WiseTransaction[]).map((i) =>
+          normalizeWiseTransaction(i, accountHolderName, bankType)
+        )
       );
       break;
     default:

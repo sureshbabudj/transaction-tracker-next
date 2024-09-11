@@ -3,14 +3,14 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProcessedTransactions, UploadForm } from "./UploadForm";
 import TransactionPage from "../components/TransactionPage";
-import { CommonTransaction } from "@/app/utils/parseCSV";
 import { useState } from "react";
 import { CircleAlert, CircleCheckBig } from "lucide-react";
+import { TransactionWithCategory } from "@/lib/actions";
 
 export function UploadPageTabs() {
-  const [transactions, setTransactions] = useState<CommonTransaction[] | null>(
-    null
-  );
+  const [transactions, setTransactions] = useState<
+    TransactionWithCategory[] | null
+  >(null);
   const handleMessage = (
     status: boolean,
     data: ProcessedTransactions | null
@@ -38,7 +38,9 @@ export function UploadPageTabs() {
         <UploadForm postMessage={handleMessage} />
       </TabsContent>
       <TabsContent value="Categorize">
-        {transactions && <TransactionPage transactions={transactions} />}
+        {transactions && (
+          <TransactionPage transactions={transactions} categories={[]} />
+        )}
       </TabsContent>
     </Tabs>
   );

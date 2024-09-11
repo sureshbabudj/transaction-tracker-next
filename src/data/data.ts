@@ -5,6 +5,9 @@ import {
   ReceiptText,
   RefreshCw,
   UploadCloud,
+  Bird,
+  Rabbit,
+  Turtle,
 } from "lucide-react";
 export interface AsideLink {
   href: string;
@@ -54,4 +57,15 @@ export const links: AsideLink[] = [
     tooltip: "Settings",
     isBottom: true,
   },
+];
+
+export const banks = [
+  {
+    desc: "Choose for Commerzbank",
+    icon: Rabbit,
+    value: "commerzbank",
+    label: "Commerzbank",
+  },
+  { desc: "Choose for Revolt", icon: Bird, value: "revolt", label: "Revolt" },
+  { desc: "Choose for Wise", icon: Turtle, value: "wise", label: "Wise" },
 ];

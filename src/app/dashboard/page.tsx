@@ -24,17 +24,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fetchInitialState, getTransactions } from "../utils/actions";
+
 import { Main } from "./components/Main";
+import { fetchInitialState, getTransactions } from "@/lib/actions";
 
 export default async function TransactionSummary() {
   const transactions = await getTransactions();
   const categorySummary: { [category: string]: number } = {};
   transactions.forEach((transaction) => {
-    if (categorySummary[transaction.category]) {
-      categorySummary[transaction.category] += transaction.amount;
+    const category = transaction.category?.name || "Uncategorized";
+    if (categorySummary[category]) {
+      categorySummary[category] += transaction.amount;
     } else {
-      categorySummary[transaction.category] = transaction.amount;
+      categorySummary[category] = transaction.amount;
     }
   });
 

@@ -1,5 +1,5 @@
+import { fetchInitialState } from "@/lib/actions";
 import { Main } from "../components/Main";
-import { fetchInitialState } from "@/app/utils/actions";
 import { UploadPageTabs } from "./PageTabs";
 
 export default async function UploadPage() {

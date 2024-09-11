@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Logo, SITE_TITLE } from "./Logo";
 import { cn } from "@/lib/utils";
-import { AsideLink } from "@/app/utils/data";
+import { AsideLink } from "@/data/data";
 
 export function AsideNav({ links }: { links: AsideLink[] }) {
   return (

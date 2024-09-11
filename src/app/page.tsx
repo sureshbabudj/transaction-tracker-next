@@ -1,11 +1,7 @@
-import Summary from "./components/SummaryPage";
-import { getTransactions } from "./utils/actions";
-
-export default async function Home() {
-  const result = await getTransactions();
+export default function Home() {
   return (
     <div className="main">
-      <Summary transactions={result} />
+      <h1>Transactions</h1>
     </div>
   );
 }

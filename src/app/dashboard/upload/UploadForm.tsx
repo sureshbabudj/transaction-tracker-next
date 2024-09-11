@@ -9,13 +9,14 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Rabbit, Bird, Turtle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CommonTransaction, parseCSV } from "@/app/utils/parseCSV";
+import { parseCSV } from "@/lib/parseCSV";
+import { banks } from "@/data/data";
+import { TransactionWithCategory } from "@/lib/actions";
 
 export interface ProcessedTransactions {
-  transactions: CommonTransaction[];
+  transactions: TransactionWithCategory[];
   accountHolderName: string;
   bankType: string;
 }
@@ -30,20 +31,9 @@ export function UploadForm({ postMessage }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const banks = [
-    {
-      desc: "Choose for Commerzbank",
-      icon: Rabbit,
-      value: "commerzbank",
-      label: "Commerzbank",
-    },
-    { desc: "Choose for Revolt", icon: Bird, value: "revolt", label: "Revolt" },
-    { desc: "Choose for Wise", icon: Turtle, value: "wise", label: "Wise" },
-  ];
-
   const handleFileUpload = (
     file: File
-  ): Promise<CommonTransaction[] | null> => {
+  ): Promise<TransactionWithCategory[] | null> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = async (e) => {
