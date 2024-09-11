@@ -28,7 +28,6 @@ import {
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -36,12 +35,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@radix-ui/react-select";
-import { banks } from "@/data/data";
-import {
-  getCategories,
-  TransactionWithCategory,
-  updateTransaction,
-} from "@/lib/actions";
+import { TransactionWithCategory, updateTransaction } from "@/lib/actions";
 import { Category } from "@prisma/client";
 
 interface TransactionPageProps {
