@@ -1,50 +1,27 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import TransactionPage from "../components/TransactionPage";
+import { Transactions } from "../components/TransactionPage";
 import { Main } from "../components/Main";
-import {
-  fetchInitialState,
-  getCategories,
-  getTransactions,
-} from "@/lib/actions";
+import { fetchInitialState, getCategories } from "@/lib/actions";
+import { getSearchParam, SearchParam } from "@/lib/utils";
 
-export default async function Page() {
-  const transactions = await getTransactions();
-  const categories = await getCategories();
+interface PageProps {
+  searchParams: { [key: string]: SearchParam };
+}
+
+export default async function Page({ searchParams }: PageProps) {
   const state = await fetchInitialState("/dashboard/transactions");
+  const categories = await getCategories();
+  const category = getSearchParam(searchParams.category);
+  const page = getSearchParam(searchParams.page);
+  const pageSize = getSearchParam(searchParams.pageSize);
   return (
     <Main breadcrumbs={state.breadcrumbs} links={state.activeLinks}>
-      <Tabs defaultValue="all">
-        <div className="overflow-x-hidden">
-          <ScrollArea className="max-w-96 sm:max-w-screen-xs lg:max-w-screen-sm xl:max-w-screen-lg 2xl:max-w-screen-xl">
-            <TabsList defaultValue="all">
-              <TabsTrigger value="all">All</TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger key={category.id} value={category.value}>
-                  {category.name || "Uncategorized"}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
-        <TabsContent value="all">
-          <TransactionPage
-            transactions={transactions}
-            categories={categories}
-          />
-        </TabsContent>
-        {categories.map((category) => (
-          <TabsContent key={category.id} value={category.value}>
-            <TransactionPage
-              categories={categories}
-              transactions={transactions.filter(
-                (t) => t.categoryId && t.categoryId === category.id
-              )}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+      <Transactions
+        categories={categories}
+        category={category}
+        page={page ? parseInt(page, 10) : undefined}
+        pageSize={pageSize ? parseInt(pageSize, 10) : undefined}
+      />
+      ;
     </Main>
   );
 }

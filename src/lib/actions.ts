@@ -17,11 +17,51 @@ export interface TransactionWithCategory extends Transaction {
   category: Category | null;
 }
 
-export async function getTransactions(): Promise<TransactionWithCategory[]> {
+export async function getTransactionCount(
+  params: {
+    categoryId?: number;
+  } = {}
+): Promise<number> {
+  if (params.categoryId) {
+    return await prisma.transaction.count({
+      where: {
+        categoryId: params.categoryId,
+      },
+    });
+  } else {
+    return await prisma.transaction.count();
+  }
+}
+
+export async function getTransactionsByCategory(
+  categoryId: number,
+  page = 1,
+  pageSize = 10
+): Promise<TransactionWithCategory[]> {
+  return await prisma.transaction.findMany({
+    where: {
+      categoryId: {
+        equals: categoryId,
+      },
+    },
+    include: {
+      category: true,
+    },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  });
+}
+
+export async function getTransactions(
+  page = 1,
+  pageSize = 10
+): Promise<TransactionWithCategory[]> {
   return await prisma.transaction.findMany({
     include: {
       category: true,
     },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 }
 
