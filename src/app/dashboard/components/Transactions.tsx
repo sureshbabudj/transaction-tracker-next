@@ -47,7 +47,6 @@ import {
 import {
   getTransactionCount,
   getTransactions,
-  getTransactionsByCategory,
   TransactionWithCategory,
   updateTransaction,
 } from "@/lib/actions";
@@ -228,11 +227,7 @@ export function Transactions({
 
   const fetchTransactions = async () => {
     if (selectedCategory) {
-      return await getTransactionsByCategory(
-        selectedCategory.id,
-        page,
-        pageSize
-      );
+      return await getTransactions(page, pageSize, selectedCategory.id);
     }
     return await getTransactions(page, pageSize);
   };
@@ -245,9 +240,11 @@ export function Transactions({
   useEffect(() => {
     setLoading(true);
     fetchTransactions().then((tx) => {
-      setTransactions(tx);
-      setLoading(false);
-      fetchCount().then((c) => setCount(c));
+      setTimeout(() => {
+        setTransactions(tx);
+        setLoading(false);
+        fetchCount().then((c) => setCount(c));
+      }, 5000);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, selectedCategory]);
@@ -414,106 +411,124 @@ export function Transactions({
                   ))}
                 </>
               )}
-              {!loading &&
-                transactions.map((transaction, index) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium hidden lg:table-cell">
-                      {transaction.date}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <Tooltip>
-                        <TooltipTrigger asChild className="lg:hidden">
-                          <p className="cursor-pointer w-[180px] whitespace-nowrap lg:w-auto lg:whitespace-normal text-ellipsis overflow-hidden lg:overflow-auto">
+              {!loading && (
+                <>
+                  {transactions.length > 0 ? (
+                    transactions.map((transaction, index) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium hidden lg:table-cell">
+                          {transaction.date}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <Tooltip>
+                            <TooltipTrigger asChild className="lg:hidden">
+                              <p className="cursor-pointer w-[180px] whitespace-nowrap lg:w-auto lg:whitespace-normal text-ellipsis overflow-hidden lg:overflow-auto">
+                                {transaction.description}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="w-[180px]">
+                                {transaction.description}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <p className="hidden lg:block">
                             {transaction.description}
                           </p>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="w-[180px]">{transaction.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <p className="hidden lg:block">
-                        {transaction.description}
-                      </p>
-                    </TableCell>
-                    <TableCell className="font-medium text-center ">
-                      {editRow !== index ? (
-                        <Badge variant="secondary">
-                          {transaction.category?.name}
-                        </Badge>
-                      ) : (
-                        <Select
-                          onValueChange={async (e) =>
-                            await changeTxCategory(e, transaction)
-                          }
-                        >
-                          <SelectTrigger
-                            key={transaction.id}
-                            id={`category-${transaction.id}`}
-                            className="items-start [&_[data-description]]:hidden"
-                          >
-                            <SelectValue placeholder="Choose" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            {categories.map((category) => (
-                              <SelectItem
-                                value={category.value}
-                                key={category.value}
-                              >
-                                <div className="py-2">{category.name}</div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium hidden lg:table-cell">
-                      {transaction.bankName}
-                    </TableCell>
-                    <TableCell className="font-medium hidden lg:table-cell">
-                      {transaction.accountHolderName}
-                    </TableCell>
-                    <TableCell
-                      className={cn("text-right font-bold", {
-                        "text-red-500": transaction.amount < 0,
-                        "text-green-500": transaction.amount > 0,
-                      })}
-                    >
-                      {transaction.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {editRow !== index ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
+                        </TableCell>
+                        <TableCell className="font-medium text-center ">
+                          {editRow !== index ? (
+                            <Badge variant="secondary">
+                              {transaction.category?.name}
+                            </Badge>
+                          ) : (
+                            <Select
+                              onValueChange={async (e) =>
+                                await changeTxCategory(e, transaction)
+                              }
                             >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => setEditRow(index)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="h-8 gap-1"
-                          onClick={() => setEditRow(null)}
+                              <SelectTrigger
+                                key={transaction.id}
+                                id={`category-${transaction.id}`}
+                                className="items-start [&_[data-description]]:hidden"
+                              >
+                                <SelectValue placeholder="Choose" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white">
+                                {categories.map((category) => (
+                                  <SelectItem
+                                    value={category.value}
+                                    key={category.value}
+                                  >
+                                    <div className="py-2">{category.name}</div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium hidden lg:table-cell">
+                          {transaction.bankName}
+                        </TableCell>
+                        <TableCell className="font-medium hidden lg:table-cell">
+                          {transaction.accountHolderName}
+                        </TableCell>
+                        <TableCell
+                          className={cn("text-right font-bold", {
+                            "text-red-500": transaction.amount < 0,
+                            "text-green-500": transaction.amount > 0,
+                          })}
                         >
-                          <CircleX className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {transaction.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {editRow !== index ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  aria-haspopup="true"
+                                  size="icon"
+                                  variant="ghost"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => setEditRow(index)}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-8 gap-1"
+                              onClick={() => setEditRow(null)}
+                            >
+                              <CircleX className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        className="font-medium hidden lg:table-cell text-center h-24"
+                        colSpan={7}
+                      >
+                        No Transactions
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -521,7 +536,7 @@ export function Transactions({
           <div className="text-xs text-muted-foreground">
             Page <strong>{page}</strong>: Showing{" "}
             <strong>{transactions.length}</strong> of <strong>{count}</strong>{" "}
-            Categories
+            Transactions
           </div>
         </CardFooter>
       </Card>

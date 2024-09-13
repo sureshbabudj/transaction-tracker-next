@@ -67,7 +67,9 @@ const getCategories: {
   data?: Category[] | null;
 } = {
   default: async (): Promise<Category[]> => {
-    if (getCategories.data) return getCategories.data;
+    if (Array.isArray(getCategories.data) && getCategories.data) {
+      return getCategories.data;
+    }
     const categories = await getDataBaseCategories();
     getCategories.data = categories;
     return categories;
@@ -168,22 +170,20 @@ const normalizeWiseTransaction = async (
   if (!transaction["Finished on"]) {
     transaction["Finished on"] = "No Date";
   }
-  if (!transaction["Reference"]) {
-    transaction["Reference"] = 1;
-  }
   if (!transaction["Source amount (after fees)"]) {
     transaction["Source amount (after fees)"] = 0;
   }
+  const description =
+    transaction["Target name"] || String(transaction["Reference"] ?? "");
   const payload: CommonTransactionPayload = {
     date: transaction["Finished on"],
-    description: transaction.Reference.toString(),
+    description,
     amount: transaction["Source amount (after fees)"],
-
     accountHolderName,
     bankName,
   };
 
-  const categoryId = await findCategory(transaction.Reference.toString());
+  const categoryId = await findCategory(description);
   if (categoryId) payload.categoryId = categoryId;
 
   return payload;
@@ -194,48 +194,52 @@ export const parseCSV = async (
   bankType: string,
   accountHolderName: string
 ): Promise<TransactionWithCategory[]> => {
-  if (!accountHolderName) {
-    alert("Account holder name is required");
-    return [];
+  try {
+    if (!accountHolderName) {
+      alert("Account holder name is required");
+      return [];
+    }
+
+    const parsedData = Papa.parse(csvData, {
+      header: true,
+      dynamicTyping: true,
+    });
+
+    let transactions: CommonTransactionPayload[] = [];
+
+    switch (bankType) {
+      case "commerzbank":
+        transactions = await Promise.all(
+          (parsedData.data as CommBankTransaction[]).map((i) =>
+            normalizeCommBankTransaction(i, accountHolderName, bankType)
+          )
+        );
+        break;
+      case "revolt":
+        transactions = await Promise.all(
+          (parsedData.data as RevoltTransaction[]).map((i) =>
+            normalizeRevoltTransaction(i, accountHolderName, bankType)
+          )
+        );
+        break;
+      case "wise":
+        transactions = await Promise.all(
+          (parsedData.data as WiseTransaction[]).map((i) =>
+            normalizeWiseTransaction(i, accountHolderName, bankType)
+          )
+        );
+        break;
+      default:
+        throw new Error("Unsupported bank type");
+    }
+
+    // Store transactions in the database without categorization
+    await createTransactions(transactions);
+
+    const result = await getTransactions();
+
+    return result;
+  } catch (error) {
+    throw error;
   }
-
-  const parsedData = Papa.parse(csvData, {
-    header: true,
-    dynamicTyping: true,
-  });
-
-  let transactions: CommonTransactionPayload[] = [];
-
-  switch (bankType) {
-    case "commerzbank":
-      transactions = await Promise.all(
-        (parsedData.data as CommBankTransaction[]).map((i) =>
-          normalizeCommBankTransaction(i, accountHolderName, bankType)
-        )
-      );
-      break;
-    case "revolt":
-      transactions = await Promise.all(
-        (parsedData.data as RevoltTransaction[]).map((i) =>
-          normalizeRevoltTransaction(i, accountHolderName, bankType)
-        )
-      );
-      break;
-    case "wise":
-      transactions = await Promise.all(
-        (parsedData.data as WiseTransaction[]).map((i) =>
-          normalizeWiseTransaction(i, accountHolderName, bankType)
-        )
-      );
-      break;
-    default:
-      throw new Error("Unsupported bank type");
-  }
-
-  // Store transactions in the database without categorization
-  await createTransactions(transactions);
-
-  const result = await getTransactions();
-
-  return result;
 };

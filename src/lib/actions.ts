@@ -33,36 +33,31 @@ export async function getTransactionCount(
   }
 }
 
-export async function getTransactionsByCategory(
-  categoryId: number,
+export async function getTransactions(
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  categoryId?: number
 ): Promise<TransactionWithCategory[]> {
-  return await prisma.transaction.findMany({
-    where: {
+  const query: {
+    where?: any;
+    skip?: number;
+    take?: number;
+    include: { category: true };
+  } = {
+    include: {
+      category: true,
+    },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  };
+  if (categoryId) {
+    query.where = {
       categoryId: {
         equals: categoryId,
       },
-    },
-    include: {
-      category: true,
-    },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-  });
-}
-
-export async function getTransactions(
-  page = 1,
-  pageSize = 10
-): Promise<TransactionWithCategory[]> {
-  return await prisma.transaction.findMany({
-    include: {
-      category: true,
-    },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-  });
+    };
+  }
+  return await prisma.transaction.findMany(query);
 }
 
 export async function updateTransaction({
