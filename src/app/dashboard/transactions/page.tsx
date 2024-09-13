@@ -1,4 +1,4 @@
-import { Transactions } from "../components/TransactionPage";
+import { Transactions } from "../components/Transactions";
 import { Main } from "../components/Main";
 import { fetchInitialState, getCategories } from "@/lib/actions";
 import { getSearchParam, SearchParam } from "@/lib/utils";
@@ -21,7 +21,6 @@ export default async function Page({ searchParams }: PageProps) {
         page={page ? parseInt(page, 10) : undefined}
         pageSize={pageSize ? parseInt(pageSize, 10) : undefined}
       />
-      ;
     </Main>
   );
 }

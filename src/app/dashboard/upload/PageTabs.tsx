@@ -2,7 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProcessedTransactions, UploadForm } from "./UploadForm";
-import TransactionPage from "../components/TransactionPage";
+import { Transactions } from "../components/Transactions";
 import { useState } from "react";
 import { CircleAlert, CircleCheckBig } from "lucide-react";
 import { TransactionWithCategory } from "@/lib/actions";
@@ -37,11 +37,7 @@ export function UploadPageTabs() {
       <TabsContent value="Upload">
         <UploadForm postMessage={handleMessage} />
       </TabsContent>
-      <TabsContent value="Categorize">
-        {transactions && (
-          <TransactionPage transactions={transactions} categories={[]} />
-        )}
-      </TabsContent>
+      <TabsContent value="Categorize"></TabsContent>
     </Tabs>
   );
 }

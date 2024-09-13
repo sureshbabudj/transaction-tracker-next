@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { Logo } from "../dashboard/components/Logo";
 
 export function LoginForm() {
   return (
@@ -87,6 +88,10 @@ export function Signin() {
     <div className="w-full lg:grid  lg:grid-cols-2 h-[100vh]">
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
+          <div className="flex items-center  justify-center">
+            <Logo className="mr-2" />{" "}
+            <p className="text-3xl font-bold"> Transaction Tracker</p>
+          </div>
           {isSignIn ? (
             <>
               <SigninForm />
