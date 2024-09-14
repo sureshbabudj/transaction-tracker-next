@@ -4,6 +4,7 @@ import { Category, Transaction } from "@prisma/client";
 import { CommonTransactionPayload } from "./parseCSV";
 import prisma from "./prisma";
 import { links } from "@/data/data";
+import { Option } from "@/app/dashboard/components/ComboboxWithAdd";
 
 export async function createTransactions(
   transactions: CommonTransactionPayload[]
@@ -11,6 +12,21 @@ export async function createTransactions(
   await prisma.transaction.createMany({
     data: transactions,
   });
+}
+
+export async function createCategory({
+  value,
+  label,
+  patterns,
+}: Option & { patterns: string }): Promise<Category> {
+  const result = await prisma.category.create({
+    data: {
+      name: label,
+      value,
+      patterns,
+    },
+  });
+  return result;
 }
 
 export interface TransactionWithCategory extends Transaction {
@@ -60,16 +76,57 @@ export async function getTransactions(
   return await prisma.transaction.findMany(query);
 }
 
-export async function updateTransaction({
+export async function updateTransactionCategory({
   id,
   categoryId,
+  updateSimilar = false,
 }: {
   id: number;
   categoryId: number;
+  updateSimilar?: boolean;
 }) {
+  const similarTx = [];
+  if (updateSimilar) {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+    const patterns = category?.patterns.split("|") ?? [];
+    if (patterns.length > 0) {
+      for (const pattern of patterns) {
+        const similar = await prisma.transaction.findMany({
+          where: {
+            description: {
+              contains: pattern,
+            },
+          },
+        });
+        similarTx.push(...similar);
+      }
+    }
+  }
   await prisma.transaction.update({
     where: {
       id,
+    },
+    data: {
+      categoryId,
+    },
+  });
+  return similarTx;
+}
+
+export async function updateAllTransactionCategoryById({
+  identifiers,
+  categoryId,
+}: {
+  identifiers: number[];
+  categoryId: number;
+}) {
+  await prisma.transaction.updateMany({
+    where: {
+      id: {
+        in: identifiers,
+      },
     },
     data: {
       categoryId,

@@ -35,22 +35,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React, { useCallback, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, createTxPattern } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import {
+  createCategory,
   getTransactionCount,
   getTransactions,
   TransactionWithCategory,
-  updateTransaction,
+  updateTransactionCategory,
 } from "@/lib/actions";
-import { Category } from "@prisma/client";
+import { Category, Transaction } from "@prisma/client";
 import {
   Pagination,
   PaginationContent,
@@ -60,13 +54,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ComboboxWithAdd } from "./ComboboxWithAdd";
+import { SimilarTransactionsTable } from "./SimilarTransactions";
 
 interface TransactionPageProps {
   categories: Category[];
@@ -153,13 +149,14 @@ export function TxPagination({
 
 export function Transactions({
   category = null,
-  categories,
+  categories: initialCategories,
   page: initialPage = 1,
   pageSize: initialPageSize = 10,
 }: TransactionPageProps) {
-  const initialCategory = categories.find((c) => c.value === category);
+  const initialCategory = initialCategories.find((c) => c.value === category);
   const pageSizes = [5, 10, 20, 50, 100];
 
+  const [categories, setCategories] = useState(initialCategories);
   const [editRow, setEditRow] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>(
     []
@@ -171,11 +168,17 @@ export function Transactions({
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     initialCategory ?? null
   );
-
+  const [actionLoading, setActionLoading] = useState(false);
   const [shownPageCount, setShownPageCount] = useState(3);
+  const [similarTx, setSimilarTx] = useState<Transaction[] | null>(null);
+  const [categoryToBeChanged, setCategoryToBeChanged] =
+    useState<Category | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
+
+  const UPDATE_SIMILAR_TX = true;
 
   const createQueryString = useCallback(
     (query: { name: string; value: string }[]) => {
@@ -206,23 +209,53 @@ export function Transactions({
     router.push(`${pathname}?${searchQuery}`);
   };
 
-  const changeTxCategory = async (
-    e: string,
+  const handleAddCategory = async (
+    value: string,
     transaction: TransactionWithCategory
   ) => {
-    const category = categories.find((c) => c.value === e);
+    setActionLoading(true);
+
+    const pattern = createTxPattern(transaction.description);
+
+    const newOption = {
+      value: value.toLowerCase().trim(),
+      label: value,
+      patterns: pattern ?? "",
+    };
+    const newCategory = await createCategory(newOption);
+    setCategories([...categories, newCategory]);
+    changeTxCategory(value, transaction, newCategory);
+  };
+
+  const changeTxCategory = async (
+    e: string,
+    transaction: TransactionWithCategory,
+    categoryToBeChanged?: Category
+  ) => {
+    setActionLoading(true);
+    const category =
+      categoryToBeChanged ?? categories.find((c) => c.value === e);
     if (!category) return;
+
+    setCategoryToBeChanged(category);
     try {
-      await updateTransaction({
+      const similarTx = await updateTransactionCategory({
         id: transaction.id,
         categoryId: category.id,
+        updateSimilar: UPDATE_SIMILAR_TX,
       });
       transaction.category = category;
+      setSimilarTx(similarTx);
+      setSheetOpen(true);
     } catch (error) {
       console.log(error);
     }
     console.log("category updated");
-    setEditRow(null);
+
+    setTimeout(() => {
+      setEditRow(null);
+      setActionLoading(false);
+    }, 5000);
   };
 
   const fetchTransactions = async () => {
@@ -442,29 +475,18 @@ export function Transactions({
                               {transaction.category?.name}
                             </Badge>
                           ) : (
-                            <Select
-                              onValueChange={async (e) =>
+                            <ComboboxWithAdd
+                              options={categories.map((i) => ({
+                                label: i.name,
+                                value: i.value,
+                              }))}
+                              onAdd={(e) => handleAddCategory(e, transaction)}
+                              onSelect={async (e) =>
                                 await changeTxCategory(e, transaction)
                               }
-                            >
-                              <SelectTrigger
-                                key={transaction.id}
-                                id={`category-${transaction.id}`}
-                                className="items-start [&_[data-description]]:hidden"
-                              >
-                                <SelectValue placeholder="Choose" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white">
-                                {categories.map((category) => (
-                                  <SelectItem
-                                    value={category.value}
-                                    key={category.value}
-                                  >
-                                    <div className="py-2">{category.name}</div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              initialValue={transaction.category?.value}
+                              isLoading={actionLoading}
+                            />
                           )}
                         </TableCell>
                         <TableCell className="font-medium hidden lg:table-cell">
@@ -549,6 +571,19 @@ export function Transactions({
           handleQuery({ currentPage: p });
         }}
       />
+
+      {categoryToBeChanged && (
+        <SimilarTransactionsTable
+          similarTx={similarTx ?? []}
+          isOpen={sheetOpen}
+          setOpen={setSheetOpen}
+          categoryToBeChanged={categoryToBeChanged}
+          beforeClose={() => {
+            setCategoryToBeChanged(null);
+            setSimilarTx(null);
+          }}
+        />
+      )}
     </>
   );
 }
