@@ -6,6 +6,7 @@ import prisma from "./prisma";
 import { links } from "@/data/data";
 import { Option } from "@/app/dashboard/components/ComboboxWithAdd";
 import { createTxPattern } from "./utils";
+import { revalidatePath } from "next/cache";
 
 export async function createTransactions(
   transactions: CommonTransactionPayload[]
@@ -88,10 +89,10 @@ export async function updateTransactionCategory({
 }) {
   try {
     const similarTx = [];
-    const category = await prisma.category.findUnique({
+    let category = await prisma.category.findUnique({
       where: { id: categoryId },
     });
-    const patterns = category?.patterns.split("|") ?? [];
+    let patterns = category?.patterns.split("|") ?? [];
 
     // update and get the transaction
     const updatedTx = await prisma.transaction.update({
@@ -111,7 +112,7 @@ export async function updateTransactionCategory({
     if (!isPatternAlreadyExist) {
       const patternsToBeAdded = [...patterns, patternToBeAdded];
 
-      await prisma.category.update({
+      category = await prisma.category.update({
         where: {
           id: categoryId,
         },
@@ -119,6 +120,8 @@ export async function updateTransactionCategory({
           patterns: patternsToBeAdded.join("|"),
         },
       });
+
+      patterns = category?.patterns.split("|") ?? [];
     }
 
     // get similar transaction
@@ -139,7 +142,7 @@ export async function updateTransactionCategory({
         }
       }
     }
-
+    revalidatePath("/dashboard/transactions");
     return similarTx;
   } catch (error) {
     console.error("Error updating transaction category:", error);
@@ -164,6 +167,7 @@ export async function updateAllTransactionCategoryById({
       categoryId,
     },
   });
+  revalidatePath("/dashboard/transactions");
 }
 
 export async function getCategories(): Promise<Category[]> {

@@ -7,6 +7,13 @@ import {
 } from "./actions";
 import { Category } from "@prisma/client";
 
+export interface TransactionMapping {
+  date: string;
+  description: string;
+  amount: string;
+  bankName: string;
+}
+
 export interface CommonTransactionPayload {
   date: string;
   description: string;
@@ -189,21 +196,51 @@ const normalizeWiseTransaction = async (
   return payload;
 };
 
+const normalizeAnyTransaction = async (
+  transaction: any,
+  accountHolderName: string,
+  mappings: TransactionMapping
+): Promise<CommonTransactionPayload> => {
+  try {
+    const date = transaction[mappings.date] || "No Date";
+    let amount = 0;
+    if (transaction[mappings.amount]) {
+      if (typeof transaction[mappings.amount] === "string") {
+        amount = parseFloat(transaction[mappings.amount].replaceAll(",", ""));
+      } else {
+        amount = transaction[mappings.amount];
+      }
+    }
+    const description = transaction[mappings.description] ?? "";
+    const payload: CommonTransactionPayload = {
+      date,
+      description,
+      amount,
+      accountHolderName,
+      bankName: mappings.bankName,
+    };
+
+    const categoryId = await findCategory(description);
+    if (categoryId) payload.categoryId = categoryId;
+
+    return payload;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 export const parseCSV = async (
-  csvData: string,
+  parsedData: Papa.ParseResult<any>,
   bankType: string,
-  accountHolderName: string
+  accountHolderName: string,
+  mappings?: TransactionMapping
 ): Promise<TransactionWithCategory[]> => {
   try {
     if (!accountHolderName) {
       alert("Account holder name is required");
       return [];
     }
-
-    const parsedData = Papa.parse(csvData, {
-      header: true,
-      dynamicTyping: true,
-    });
 
     let transactions: CommonTransactionPayload[] = [];
 
@@ -226,6 +263,16 @@ export const parseCSV = async (
         transactions = await Promise.all(
           (parsedData.data as WiseTransaction[]).map((i) =>
             normalizeWiseTransaction(i, accountHolderName, bankType)
+          )
+        );
+        break;
+      case "others":
+        if (!mappings) {
+          throw new Error("Mappings are required for other bank types");
+        }
+        transactions = await Promise.all(
+          (parsedData.data as any[]).map((i) =>
+            normalizeAnyTransaction(i, accountHolderName, mappings)
           )
         );
         break;
