@@ -572,7 +572,7 @@ export function Transactions({
         }}
       />
 
-      {categoryToBeChanged && (
+      {similarTx && similarTx.length > 0 && categoryToBeChanged && (
         <SimilarTransactionsTable
           similarTx={similarTx ?? []}
           isOpen={sheetOpen}

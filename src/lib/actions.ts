@@ -5,6 +5,7 @@ import { CommonTransactionPayload } from "./parseCSV";
 import prisma from "./prisma";
 import { links } from "@/data/data";
 import { Option } from "@/app/dashboard/components/ComboboxWithAdd";
+import { createTxPattern } from "./utils";
 
 export async function createTransactions(
   transactions: CommonTransactionPayload[]
@@ -85,34 +86,65 @@ export async function updateTransactionCategory({
   categoryId: number;
   updateSimilar?: boolean;
 }) {
-  const similarTx = [];
-  if (updateSimilar) {
+  try {
+    const similarTx = [];
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
     });
     const patterns = category?.patterns.split("|") ?? [];
-    if (patterns.length > 0) {
-      for (const pattern of patterns) {
-        const similar = await prisma.transaction.findMany({
-          where: {
-            description: {
-              contains: pattern,
+
+    // update and get the transaction
+    const updatedTx = await prisma.transaction.update({
+      where: {
+        id,
+      },
+      data: {
+        categoryId,
+      },
+    });
+
+    // get the updated transaction desc and create pattern
+    const patternToBeAdded = createTxPattern(updatedTx.description);
+    const isPatternAlreadyExist = patterns.find((p) => p === patternToBeAdded);
+
+    // check and update if the pattern already exists
+    if (!isPatternAlreadyExist) {
+      const patternsToBeAdded = [...patterns, patternToBeAdded];
+
+      await prisma.category.update({
+        where: {
+          id: categoryId,
+        },
+        data: {
+          patterns: patternsToBeAdded.join("|"),
+        },
+      });
+    }
+
+    // get similar transaction
+    if (updateSimilar) {
+      if (patterns.length > 0) {
+        for (const pattern of patterns) {
+          const similar = await prisma.transaction.findMany({
+            where: {
+              description: {
+                contains: pattern,
+              },
+              categoryId: {
+                equals: null,
+              },
             },
-          },
-        });
-        similarTx.push(...similar);
+          });
+          similarTx.push(...similar);
+        }
       }
     }
+
+    return similarTx;
+  } catch (error) {
+    console.error("Error updating transaction category:", error);
+    return [];
   }
-  await prisma.transaction.update({
-    where: {
-      id,
-    },
-    data: {
-      categoryId,
-    },
-  });
-  return similarTx;
 }
 
 export async function updateAllTransactionCategoryById({
