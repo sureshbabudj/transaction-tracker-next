@@ -253,10 +253,8 @@ export function Transactions({
     }
     console.log("category updated");
 
-    setTimeout(() => {
-      setEditRow(null);
-      setActionLoading(false);
-    }, 5000);
+    setEditRow(null);
+    setActionLoading(false);
   };
 
   const fetchTransactions = async () => {
@@ -274,11 +272,9 @@ export function Transactions({
   useEffect(() => {
     setLoading(true);
     fetchTransactions().then((tx) => {
-      setTimeout(() => {
-        setTransactions(tx);
-        setLoading(false);
-        fetchCount().then((c) => setCount(c));
-      }, 5000);
+      setTransactions(tx);
+      setLoading(false);
+      fetchCount().then((c) => setCount(c));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, selectedCategory]);

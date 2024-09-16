@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Logo } from "../dashboard/components/Logo";
+import { Logo, SITE_TITLE } from "@/app/dashboard/components/Logo";
 
 export function LoginForm() {
   return (
@@ -82,26 +82,21 @@ export function SigninForm() {
   );
 }
 
-export function Signin() {
-  const [isSignIn, setIsSignIn] = useState(true);
+export function Signin({ signInPage }: { signInPage: boolean }) {
   return (
     <div className="w-full lg:grid  lg:grid-cols-2 h-[100vh]">
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
-          <div className="flex items-center  justify-center">
+          <Link className="flex items-center  justify-center" href="/">
             <Logo className="mr-2" />{" "}
-            <p className="text-3xl font-bold"> Transaction Tracker</p>
-          </div>
-          {isSignIn ? (
+            <p className="text-3xl font-bold">{SITE_TITLE}</p>
+          </Link>
+          {signInPage ? (
             <>
               <SigninForm />
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <Link
-                  href="#"
-                  className="underline"
-                  onClick={() => setIsSignIn(!isSignIn)}
-                >
+                <Link href="/auth/signup" className="underline">
                   Sign up
                 </Link>
               </div>
@@ -111,11 +106,7 @@ export function Signin() {
               <LoginForm />
               <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}
-                <Link
-                  href="#"
-                  className="underline"
-                  onClick={() => setIsSignIn(!isSignIn)}
-                >
+                <Link href="/auth/signin" className="underline">
                   Sign in
                 </Link>
               </div>

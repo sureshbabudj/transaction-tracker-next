@@ -9,4 +9,4 @@ export const Logo = ({ className }: { className?: string }) => (
   />
 );
 
-export const SITE_TITLE = "Transaction Tracker";
+export const SITE_TITLE = "FinTrack";

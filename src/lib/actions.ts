@@ -6,7 +6,6 @@ import prisma from "./prisma";
 import { links } from "@/data/data";
 import { Option } from "@/app/dashboard/components/ComboboxWithAdd";
 import { createTxPattern } from "./utils";
-import { revalidatePath } from "next/cache";
 
 export async function createTransactions(
   transactions: CommonTransactionPayload[]
@@ -78,6 +77,39 @@ export async function getTransactions(
   return await prisma.transaction.findMany(query);
 }
 
+export async function getTransactionsPerCategory() {
+  return await prisma.category.findMany({
+    include: {
+      transactions: true,
+    },
+  });
+}
+
+export async function getCategorisedTransactionsSummary({
+  filteredBy,
+}: {
+  filteredBy: "all" | "income" | "expense";
+}) {
+  const categories = await getTransactionsPerCategory();
+  const result = categories.map((category) => {
+    let sum = 0;
+    category.transactions.forEach(({ amount }) => {
+      if (filteredBy === "income" && amount > 0) {
+        sum += amount;
+      } else if (filteredBy === "expense" && amount < 0) {
+        sum += amount;
+      } else if (filteredBy === "all") {
+        sum += amount;
+      }
+    });
+    return {
+      category: category.name,
+      amount: sum,
+    };
+  });
+  return result;
+}
+
 export async function updateTransactionCategory({
   id,
   categoryId,
@@ -142,7 +174,6 @@ export async function updateTransactionCategory({
         }
       }
     }
-    revalidatePath("/dashboard/transactions");
     return similarTx;
   } catch (error) {
     console.error("Error updating transaction category:", error);
@@ -167,7 +198,6 @@ export async function updateAllTransactionCategoryById({
       categoryId,
     },
   });
-  revalidatePath("/dashboard/transactions");
 }
 
 export async function getCategories(): Promise<Category[]> {
