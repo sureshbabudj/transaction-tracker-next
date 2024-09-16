@@ -90,7 +90,7 @@ export function ComboboxWithAdd({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80">
-        <Command>
+        <Command filter={(value, search) => (value.includes(search) ? 1 : 0)}>
           <CommandInput
             onChangeCapture={(e: ChangeEvent<HTMLInputElement>) => {
               console.log(e);
