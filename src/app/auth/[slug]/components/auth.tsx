@@ -5,8 +5,30 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
 import { Logo, SITE_TITLE } from "@/app/dashboard/components/Logo";
+
+import { useFormState } from "react-dom";
+import { ActionResult, login, signup } from "./auth.action";
+
+export function Form({
+  children,
+  action,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  action: (prevState: any, formData: FormData) => Promise<ActionResult>;
+}) {
+  const [state, formAction] = useFormState(action, {
+    error: null,
+  });
+  return (
+    <form action={formAction} className={className}>
+      {children}
+      <p>{state.error}</p>
+    </form>
+  );
+}
 
 export function LoginForm() {
   return (
@@ -19,26 +41,37 @@ export function LoginForm() {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="first-name">First name</Label>
-          <Input id="first-name" placeholder="Max" required />
+          <Label htmlFor="firstName">First name</Label>
+          <Input id="firstName" name="firstName" placeholder="Max" required />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="last-name">Last name</Label>
-          <Input id="last-name" placeholder="Robinson" required />
+          <Label htmlFor="lastName">Last name</Label>
+          <Input
+            id="lastName"
+            name="lastName"
+            placeholder="Robinson"
+            required
+          />
         </div>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" placeholder="m@example.com" required />
+        <Input
+          id="email"
+          type="email"
+          name="email"
+          placeholder="m@example.com"
+          required
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" />
+        <Input id="password" name="password" type="password" />
       </div>
       <Button type="submit" className="w-full">
         Create an account
       </Button>
-      <Button variant="outline" className="w-full">
+      <Button variant="outline" className="w-full" type="submit">
         Sign up with Google
       </Button>
     </>
@@ -57,7 +90,13 @@ export function SigninForm() {
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="m@example.com"
+            required
+          />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center">
@@ -69,7 +108,7 @@ export function SigninForm() {
               Forgot your password?
             </Link>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" type="password" name="password" required />
         </div>
         <Button type="submit" className="w-full">
           Login
@@ -86,7 +125,10 @@ export function Signin({ signInPage }: { signInPage: boolean }) {
   return (
     <div className="w-full lg:grid  lg:grid-cols-2 h-[100vh]">
       <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
+        <Form
+          className="mx-auto grid w-[350px] gap-6"
+          action={signInPage ? login : signup}
+        >
           <Link className="flex items-center  justify-center" href="/">
             <Logo className="mr-2" />{" "}
             <p className="text-3xl font-bold">{SITE_TITLE}</p>
@@ -112,7 +154,7 @@ export function Signin({ signInPage }: { signInPage: boolean }) {
               </div>
             </>
           )}
-        </div>
+        </Form>
       </div>
       <div className="hidden bg-muted lg:block">
         <Image

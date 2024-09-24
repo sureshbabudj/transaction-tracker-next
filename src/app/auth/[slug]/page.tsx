@@ -1,4 +1,4 @@
-import { Signin } from "./components/signin";
+import { Signin } from "./components/auth";
 
 export default async function Home({ params }: { params: { slug: string } }) {
   if (params.slug === "signup") {

@@ -9,8 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Logo, SITE_TITLE } from "./dashboard/components/Logo";
+import { validateRequest } from "@/lib/auth";
+import Logout from "./auth/[slug]/components/logout";
 
-export default function Home() {
+export default async function Home() {
+  const { session } = await validateRequest();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white dark:bg-gray-800 shadow">
@@ -20,16 +24,24 @@ export default function Home() {
           </h1>
           <nav>
             <ul className="flex space-x-4">
-              <li>
-                <Link href="auth/signin" passHref>
-                  <Button variant="ghost">Login</Button>
-                </Link>
-              </li>
-              <li>
-                <Link href="/auth/signup" passHref>
-                  <Button>Sign Up</Button>
-                </Link>
-              </li>
+              {session?.userId ? (
+                <li>
+                  <Logout />
+                </li>
+              ) : (
+                <>
+                  <li>
+                    <Link href="auth/signin" passHref>
+                      <Button variant="ghost">Login</Button>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/auth/signup" passHref>
+                      <Button>Sign Up</Button>
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
         </div>
