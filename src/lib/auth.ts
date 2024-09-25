@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import prismaClient from "./prisma";
 import { Session, User } from "@prisma/client";
+import { NextRequest } from "next/server";
 
 const adapter = new PrismaAdapter(prismaClient.session, prismaClient.user);
 
@@ -22,10 +23,12 @@ export const lucia = new Lucia(adapter, {
 });
 
 export const validateRequest = cache(
-  async (): Promise<
+  async (
+    req: NextRequest
+  ): Promise<
     { user: User; session: Session } | { user: null; session: null }
   > => {
-    const sessionId = cookies().get(lucia.sessionCookieName)?.value ?? null;
+    const sessionId = req.cookies.get(lucia.sessionCookieName)?.value || null;
     if (!sessionId) {
       return {
         user: null,
