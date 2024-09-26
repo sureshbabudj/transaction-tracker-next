@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Logo, SITE_TITLE } from "./dashboard/components/Logo";
+import { Logo, SITE_TITLE, SITE_TITLE_TEXT } from "./dashboard/components/Logo";
 import { validateAuth } from "@/lib/auth";
 import Logout from "./auth/[slug]/components/logout";
 
@@ -124,7 +124,8 @@ export default async function Home() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-600 dark:text-gray-300 mb-4 md:mb-0">
-              © 2023 {SITE_TITLE}. All rights reserved.
+              © {new Date().getFullYear()} {SITE_TITLE_TEXT}. All rights
+              reserved.
             </p>
             <nav>
               <ul className="flex space-x-4">
