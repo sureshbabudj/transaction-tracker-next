@@ -1,19 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo, SITE_TITLE } from "./dashboard/components/Logo";
-import { validateRequest } from "@/lib/auth";
+import { validateAuth } from "@/lib/auth";
 import Logout from "./auth/[slug]/components/logout";
 
 export default async function Home() {
-  const { session } = await validateRequest();
+  const { session } = await validateAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800">
@@ -25,9 +18,16 @@ export default async function Home() {
           <nav>
             <ul className="flex space-x-4">
               {session?.userId ? (
-                <li>
-                  <Logout />
-                </li>
+                <>
+                  <li>
+                    <Link href="dashboard" passHref>
+                      <Button variant="ghost">Dashboard</Button>
+                    </Link>
+                  </li>
+                  <li>
+                    <Logout />
+                  </li>
+                </>
               ) : (
                 <>
                   <li>

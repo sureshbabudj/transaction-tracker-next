@@ -9,6 +9,8 @@ import { Logo, SITE_TITLE } from "@/app/dashboard/components/Logo";
 
 import { useFormState } from "react-dom";
 import { ActionResult, login, signup } from "./auth.action";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function Form({
   children,
@@ -25,7 +27,14 @@ export function Form({
   return (
     <form action={formAction} className={className}>
       {children}
-      <p>{state.error}</p>
+
+      {state.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      )}
     </form>
   );
 }

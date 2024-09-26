@@ -1,4 +1,7 @@
 import { cn } from "@/lib/utils";
+import { Spicy_Rice } from "next/font/google";
+
+const headingFont = Spicy_Rice({ weight: "400", subsets: ["latin"] });
 
 export const Logo = ({ className }: { className?: string }) => (
   // eslint-disable-next-line @next/next/no-img-element
@@ -9,4 +12,15 @@ export const Logo = ({ className }: { className?: string }) => (
   />
 );
 
-export const SITE_TITLE = "FinTrack";
+export const SITE_TITLE_TEXT = "FinTrack";
+
+export const SITE_TITLE = (
+  <span
+    className={cn(
+      "bg-[#120047] rounded-md px-2 text-blue-200 inline-block mx-1",
+      headingFont.className
+    )}
+  >
+    <span className="text-white">Fin</span>Track
+  </span>
+);

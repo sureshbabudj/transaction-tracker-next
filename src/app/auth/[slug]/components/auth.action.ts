@@ -10,7 +10,7 @@ import {
   validatePassword,
   verifyPassword,
 } from "./utils";
-import { lucia, validateRequest } from "@/lib/auth";
+import { lucia, validateAuth } from "@/lib/auth";
 
 export interface ActionResult {
   error: string | null;
@@ -110,7 +110,7 @@ export async function signup(
 }
 
 export async function logout(): Promise<ActionResult> {
-  const { session } = await validateRequest();
+  const { session } = await validateAuth();
   if (!session) {
     return {
       error: "Unauthorized",

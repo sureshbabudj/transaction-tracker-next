@@ -28,14 +28,36 @@ export const validateRequest = cache(
   ): Promise<
     { user: User; session: Session } | { user: null; session: null }
   > => {
-    const sessionId = req.cookies.get(lucia.sessionCookieName)?.value || null;
+    const sessionId = req.cookies?.get(lucia.sessionCookieName)?.value || null;
     if (!sessionId) {
       return {
         user: null,
         session: null,
       };
     }
+    return validateSession(sessionId) as any;
+  }
+);
 
+export const validateAuth = cache(
+  async (): Promise<
+    { user: User; session: Session } | { user: null; session: null }
+  > => {
+    const sessionId = cookies().get(lucia.sessionCookieName)?.value || null;
+    if (!sessionId) {
+      return {
+        user: null,
+        session: null,
+      };
+    }
+    return validateSession(sessionId) as any;
+  }
+);
+
+export const validateSession = cache(
+  async (
+    sessionId: string
+  ): Promise<{ user: User; session: Session } | null> => {
     const result = await lucia.validateSession(sessionId);
     try {
       if (result.session && result.session.fresh) {

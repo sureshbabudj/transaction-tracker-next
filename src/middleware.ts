@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest, event: NextFetchEvent) {
+  if (req.nextUrl.pathname.startsWith("/auth/api")) {
+    return NextResponse.next();
+  }
+
   const cookies = req.cookies.getAll();
   const cookieString = cookies
     .map((cookie) => `${cookie.name}=${cookie.value}`)
@@ -14,14 +18,24 @@ export async function middleware(req: NextRequest, event: NextFetchEvent) {
       },
     })
   ).json();
-  if (!data.session?.userId) {
-    return NextResponse.redirect(
-      new URL(`http://${req.nextUrl.host}/auth/signin`, req.url)
-    );
+
+  if (data.session?.userId) {
+    if (req.nextUrl.pathname.startsWith("/auth")) {
+      return NextResponse.redirect(
+        new URL(`http://${req.nextUrl.host}/dashboard`, req.url)
+      );
+    }
+  } else {
+    if (req.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(
+        new URL(`http://${req.nextUrl.host}/auth/signin`, req.url)
+      );
+    }
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: "/dashboard/:path*",
+  matcher: ["/dashboard/:path*", "/auth/:path*"],
 };
