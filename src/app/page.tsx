@@ -46,21 +46,32 @@ export default async function Home() {
           </nav>
         </div>
       </header>
-
+      <div
+        className="bg-cover"
+        style={{
+          backgroundImage:
+            'url("https://cdn.tailkit.com/media/placeholders/photo-Oalh2MojUuk-1280x800.jpg")',
+        }}
+      >
+        <div className="bg-blue-900/95">
+          <div className="container mx-auto space-y-16 px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl text-white">
+            <div className="text-center">
+              <Logo className="hi-solid hi-code-bracket-square mb-5 inline-block size-16 text-blue-300/50" />
+              <h2 className="mb-4 text-4xl font-black text-white">
+                {SITE_TITLE}
+              </h2>
+              <h3 className="mx-auto text-xl font-medium leading-relaxed text-gray-200 lg:w-2/3">
+                Simplify Your Financial Life Effortlessly
+              </h3>
+              <h3 className="mx-auto text-xl font-medium leading-relaxed text-gray-200 lg:w-2/3">
+                Categorize and manage your banking transactions with
+                {SITE_TITLE_TEXT}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
       <main className="container mx-auto px-4 py-12">
-        <section className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Simplify Your Financial Life
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Effortlessly categorize and manage your banking transactions with
-            {SITE_TITLE}.
-          </p>
-          <Link href="/auth/signup" passHref>
-            <Button size="lg">Get Started for Free</Button>
-          </Link>
-        </section>
-
         <section className="grid md:grid-cols-3 gap-8 mb-16">
           <Card>
             <CardHeader>

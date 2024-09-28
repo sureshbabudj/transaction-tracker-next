@@ -5,6 +5,7 @@ import {
   ReceiptText,
   RefreshCw,
   UploadCloud,
+  Calculator,
 } from "lucide-react";
 export interface AsideLink {
   href: string;
@@ -46,6 +47,12 @@ export const links: AsideLink[] = [
     icon: LineChart,
     label: "Analytics",
     tooltip: "Analytics",
+  },
+  {
+    href: "/dashboard/calculate-tax",
+    icon: Calculator,
+    label: "Calculate Tax",
+    tooltip: "Calculate Tax",
   },
   {
     href: "#",

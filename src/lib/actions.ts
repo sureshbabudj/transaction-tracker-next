@@ -228,6 +228,12 @@ export const fetchInitialState = async (
       label: "Analytics",
       path: "/dashboard/analytics",
     });
+  } else if (path === "/dashboard/calculate-tax") {
+    breadcrumbs.push({ label: "Dashboard", path: "/dashboard" });
+    breadcrumbs.push({
+      label: "Calculate Tax",
+      path: "/dashboard/calculate-tax",
+    });
   }
   // Fetch or compute your initial state here
   return {
