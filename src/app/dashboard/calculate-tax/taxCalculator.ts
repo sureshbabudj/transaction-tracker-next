@@ -1,5 +1,4 @@
 export type GermanTaxSchema = Section[];
-
 export type Section = {
   serialNo: string;
   type?: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import {
   calculateTax,
   Expense,
@@ -11,32 +11,63 @@ import {
   Section,
 } from "./taxCalculator";
 import { z } from "zod";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-const formSchema = z.object({
-  income: z.number().min(0, "Income must be a positive number"),
-  taxClass: z.enum(["I", "II", "III", "IV", "V", "VI"]),
-  children: z.number().min(0, "Number of children must be a positive number"),
-  spouseIncome: z.number().min(0, "Spouse income must be a positive number"),
-  specialExpenses: z
-    .number()
-    .min(0, "Special expenses must be a positive number"),
-  extraordinaryBurden: z
-    .number()
-    .min(0, "Extraordinary burden must be a positive number"),
-});
+function getZodVlidationSchema(sections: Section[]) {
+  const validationSchema: { [k: string]: any } = {};
+  const recuriveFn = (sec: Section[]) =>
+    sec.forEach((section) => {
+      if (section.type === "group") {
+        recuriveFn(section.sections || []);
+      } else if (section.type === "select" && section.options?.length) {
+        validationSchema[section.label] = z
+          .string({ message: `Enter a valid string for ${section.label}` })
+          .default(section.options[0]);
+      } else if (section.type === "text") {
+        validationSchema[section.label] = z
+          .string({ message: `Enter a valid string for ${section.label}` })
+          .default("");
+      } else if (section.type === "date") {
+        validationSchema[section.label] = z
+          .date({ message: `Enter a valid date for ${section.label}` })
+          .default(new Date());
+      } else {
+        validationSchema[section.label] = z
+          .number({ message: `Enter a valid value for ${section.label}` })
+          .default(0);
+      }
+    });
+  recuriveFn(sections);
+  return z.object(validationSchema);
+}
 
 export default function TaxForm() {
-  const taxForm = useRef(null);
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    if (!taxForm.current) {
+  const formFields = [personalInfoSchema].concat(germanTaxSchema);
+  const validationSchema = getZodVlidationSchema(formFields);
+
+  const handleSubmit = (formData: FormData) => {
+    const { data, error } = validationSchema.safeParse(formData);
+
+    if (!data) {
+      console.log(error);
       return;
     }
-    const formData = new FormData(taxForm.current);
-    const data: { [k: string]: any } = {};
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      data[key] = value;
-    });
 
     const incomes: Income[] = [];
     const expenses: Expense[] = [];
@@ -79,52 +110,90 @@ export default function TaxForm() {
       );
     }
 
-    const fieldLabel = <label htmlFor={name}>{field.label}</label>;
     let fieldInput;
     switch (field.type) {
-      case "text":
-        fieldInput = <input type="text" name={name} />;
-        break;
       case "select":
         fieldInput = (
-          <select name={name}>
-            {field.options?.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <div className="mb-4">
+            <Label htmlFor={name.toLowerCase().replace(/\s/g, "-")}>
+              {field.label}
+            </Label>
+            <input type="text" className="hidden" name={name} />
+            <Select
+              onValueChange={(value) => {
+                const hiddenInput: HTMLInputElement | null =
+                  document.querySelector(`input[name="${name}"]`);
+                if (hiddenInput) {
+                  hiddenInput.value = value;
+                }
+              }}
+            >
+              <SelectTrigger
+                className="bg-white"
+                id={name.toLowerCase().replace(/\s/g, "-")}
+              >
+                <SelectValue placeholder={`Select ${name}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {field.options?.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         );
         break;
-      case "date":
-        fieldInput = <input type="date" name={name} />;
-        break;
       default:
-        fieldInput = <input type="number" name={name} />;
+        fieldInput = (
+          <div className="mb-4">
+            <Label htmlFor={name.toLowerCase().replace(/\s/g, "-")}>
+              {field.label}
+            </Label>
+            <Input
+              className="bg-white"
+              id={name.toLowerCase().replace(/\s/g, "-")}
+              name={name}
+              type={field.type === "date" ? "date" : "text"}
+              placeholder={`Enter ${field.label}`}
+            />
+            {/* todo: error message display  */}
+            {Number("2") === 1 && (
+              <p className="text-red-500 text-xs">{name}</p>
+            )}
+          </div>
+        );
+        break;
     }
-    return (
-      <div className="flex flex-col gap-2 mb-6" key={field.serialNo}>
-        <div>{fieldLabel}</div>
-        <div>{fieldInput}</div>
-      </div>
-    );
+    return fieldInput;
   };
 
-  const renderFields = (
-    fields = [personalInfoSchema].concat(germanTaxSchema)
-  ) => {
+  const renderFields = (fields = formFields) => {
     return fields.map((field) => renderField(field));
   };
 
   return (
-    <div>
-      <h1>Tax Form</h1>
-      <form ref={taxForm} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderFields()}
-        <button type="submit" onClick={handleSubmit}>
-          Submit
-        </button>
-      </form>
-    </div>
+    <Card x-chunk="dashboard-06-chunk-0">
+      <CardHeader>
+        <CardTitle>Calculate Tax for the year 2024</CardTitle>
+        <CardDescription>Fill up below German tax fields...</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          action={(e) => {
+            "use client";
+            handleSubmit(e);
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {renderFields()}
+          </div>
+          <div className="flex gap-2 justify-center">
+            <Button type="submit">Submit</Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
