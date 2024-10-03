@@ -11,6 +11,7 @@ export interface TransactionMapping {
   date: string;
   description: string;
   amount: string;
+  transactionType: string;
   bankName: string;
 }
 
@@ -199,6 +200,7 @@ const normalizeWiseTransaction = async (
 const normalizeAnyTransaction = async (
   transaction: any,
   accountHolderName: string,
+  _bankName: string,
   mappings: TransactionMapping
 ): Promise<CommonTransactionPayload> => {
   try {
@@ -209,6 +211,10 @@ const normalizeAnyTransaction = async (
         amount = parseFloat(transaction[mappings.amount].replaceAll(",", ""));
       } else {
         amount = transaction[mappings.amount];
+      }
+      if (mappings.transactionType) {
+        amount =
+          transaction[mappings.transactionType] === "DR" ? amount * -1 : amount;
       }
     }
     const description = transaction[mappings.description] ?? "";
@@ -272,7 +278,7 @@ export const parseCSV = async (
         }
         transactions = await Promise.all(
           (parsedData.data as any[]).map((i) =>
-            normalizeAnyTransaction(i, accountHolderName, mappings)
+            normalizeAnyTransaction(i, accountHolderName, bankType, mappings)
           )
         );
         break;

@@ -41,7 +41,11 @@ export interface ProcessedTransactions {
 }
 
 interface Props {
-  postMessage: (status: boolean, data: ProcessedTransactions | null) => void;
+  postMessage: (
+    status: boolean,
+    data: ProcessedTransactions | null,
+    err?: any
+  ) => void;
 }
 
 export async function readFile(
@@ -74,6 +78,7 @@ export function UploadForm({ postMessage }: Props) {
     date: "",
     description: "",
     amount: "",
+    transactionType: "",
     bankName: "",
   });
   const [csvData, setCsvData] = useState<Papa.ParseResult<any> | null>(null);
@@ -125,9 +130,17 @@ export function UploadForm({ postMessage }: Props) {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     if (!bankType) newErrors.bankType = "Bank type is required.";
+    if (bankType === "others") {
+      if (!csvMappings.bankName) newErrors.bankName = "Bank name is required.";
+      if (!csvMappings.date) newErrors.date = "Date column is required.";
+      if (!csvMappings.description)
+        newErrors.description = "Description column is required.";
+      if (!csvMappings.amount) newErrors.amount = "Amount column is required.";
+    }
     if (!accountHolderName)
       newErrors.accountHolderName = "Account holder name is required.";
     if (!csvData) newErrors.file = "Please upload a valid CSV file";
+
     return newErrors;
   };
 
@@ -147,7 +160,7 @@ export function UploadForm({ postMessage }: Props) {
       if (!transactions) throw "No transactions found.";
       postMessage(true, { transactions, accountHolderName, bankType });
     } catch (error) {
-      postMessage(false, null);
+      postMessage(false, null, error);
     }
   };
 
@@ -222,26 +235,51 @@ export function UploadForm({ postMessage }: Props) {
 
         {bankType === "others" && csvHeaders.length > 0 && (
           <div className="grid gap-3">
-            <Label>Transaction Mappings</Label>
+            <Label className="mb-3">Transaction Mappings</Label>
             {Object.keys(csvMappings).map((key) => (
               <div key={key} className="grid gap-3">
-                <Label htmlFor={key}>{key}</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setCsvMappings({ ...csvMappings, [key]: value })
-                  }
-                >
-                  <SelectTrigger id={key}>
-                    <SelectValue placeholder={`Select CSV column for ${key}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {csvHeaders.map((header) => (
-                      <SelectItem value={header} key={header}>
-                        {header}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {key !== "bankName" ? (
+                  <>
+                    <Label htmlFor={key}>{key}</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        setCsvMappings({ ...csvMappings, [key]: value })
+                      }
+                    >
+                      <SelectTrigger id={key}>
+                        <SelectValue
+                          placeholder={`Select CSV column for ${key}`}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {csvHeaders.map((header) => (
+                          <SelectItem value={header} key={header}>
+                            {header}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input
+                      id="bank-name"
+                      type="text"
+                      placeholder="Enter the bank name"
+                      value={csvMappings.bankName}
+                      onChange={(e) =>
+                        setCsvMappings({
+                          ...csvMappings,
+                          [key]: e.target.value,
+                        })
+                      }
+                    />
+                  </>
+                )}
+                {errors[key] && (
+                  <p className="text-red-500 text-xs">{errors[key]}</p>
+                )}
               </div>
             ))}
           </div>

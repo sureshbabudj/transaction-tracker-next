@@ -11,10 +11,20 @@ export function getSearchParam(sp: SearchParam): string | null {
   return sp ? (Array.isArray(sp) ? sp[0] : sp) : null;
 }
 
-export function createTxPattern(content: string) {
+export function createTxPatternWithNumbers(content: string) {
   const trimmedContent = content.slice(0, 60);
   const words = trimmedContent.match(/\b\w+\b/g);
   const pattern = words?.map((word) => `%${word}%`).join("");
+  return pattern;
+}
+
+export function createTxPattern(description: string) {
+  const trimmedContent = description.slice(0, 60);
+  const words = trimmedContent.match(/\b\w+\b/g);
+  const pattern = words
+    ?.filter((word) => isNaN(Number(word))) // Filter out numbers
+    .map((word) => `%${word}%`)
+    .join("");
   return pattern;
 }
 

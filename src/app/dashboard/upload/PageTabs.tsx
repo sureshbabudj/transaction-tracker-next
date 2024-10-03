@@ -2,7 +2,6 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProcessedTransactions, UploadForm } from "./UploadForm";
-import { Transactions } from "../components/Transactions";
 import { useState } from "react";
 import { CircleAlert, CircleCheckBig } from "lucide-react";
 import { TransactionWithCategory } from "@/lib/actions";
@@ -13,10 +12,14 @@ export function UploadPageTabs() {
   >(null);
   const handleMessage = (
     status: boolean,
-    data: ProcessedTransactions | null
+    data: ProcessedTransactions | null,
+    err: Error | null
   ) => {
     if (status && data) {
       setTransactions(data.transactions);
+    }
+    if (!status && err) {
+      console.error(err);
     }
   };
   return (
