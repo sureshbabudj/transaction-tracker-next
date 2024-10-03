@@ -56,7 +56,10 @@ export default async function Home() {
         <div className="bg-blue-900/95">
           <div className="container mx-auto space-y-16 px-4 py-16 lg:px-8 lg:py-32 xl:max-w-7xl text-white">
             <div className="text-center">
-              <Logo className="hi-solid hi-code-bracket-square mb-5 inline-block size-16 text-blue-300/50" />
+              <Logo
+                className="hi-solid hi-code-bracket-square mb-5 inline-block size-16 text-blue-300/50"
+                fill="white"
+              />
               <h2 className="mb-4 text-4xl font-black text-white">
                 {SITE_TITLE}
               </h2>
@@ -121,14 +124,25 @@ export default async function Home() {
           </ol>
         </section>
 
-        <section className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Ready to Take Control of Your Finances?
-          </h3>
-          <Link href="/auth/signup" passHref>
-            <Button size="lg">Create Your Free Account</Button>
-          </Link>
-        </section>
+        {session?.userId ? (
+          <section className="text-center">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Manage the transactions and calculate tax?
+            </h3>
+            <Link href="/dashboard" passHref>
+              <Button size="lg">Go to my dashboard</Button>
+            </Link>
+          </section>
+        ) : (
+          <section className="text-center">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Ready to Take Control of Your Finances?
+            </h3>
+            <Link href="/auth/signup" passHref>
+              <Button size="lg">Create Your Free Account</Button>
+            </Link>
+          </section>
+        )}
       </main>
 
       <footer className="bg-gray-100 dark:bg-gray-800 mt-12">

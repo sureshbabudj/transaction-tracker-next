@@ -17,3 +17,17 @@ export function createTxPattern(content: string) {
   const pattern = words?.map((word) => `%${word}%`).join("");
   return pattern;
 }
+
+export const getLocalStorage = (key: string) => {
+  if (typeof window !== "undefined") {
+    const savedData = localStorage.getItem(key);
+    return savedData ? JSON.parse(savedData) : null;
+  }
+  return null;
+};
+
+export const setLocalStorage = (key: string, value: any) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+};
