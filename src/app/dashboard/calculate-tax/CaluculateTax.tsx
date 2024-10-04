@@ -28,6 +28,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 function getZodVlidationSchema(sections: Section[]) {
   const validationSchema: { [k: string]: any } = {};
@@ -86,6 +87,11 @@ export default function TaxForm() {
     }
 
     const result = calculateTax(incomes, expenses, data["Tax class"]);
+
+    toast({
+      title: "Scheduled: Catch up ",
+      description: "Friday, February 10, 2023 at 5:57 PM",
+    });
 
     console.log(data, incomes, expenses, result);
   };
